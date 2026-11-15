@@ -1,5 +1,5 @@
 /* LED Tiyatro — Service Worker: GitHub Pages'te bir kez açıldıktan sonra internetsiz çalışma */
-const CACHE = 'ledtiyatro-v1';
+const CACHE = 'ledtiyatro-v2';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {

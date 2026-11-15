@@ -1,28 +1,21 @@
-# LED Tiyatro — WLED / ESP32 Tiyatro Işık Masası
+# LED Tiyatro — WLED / ESP32 Tiyatro Işık Masası (v2)
 
-Tiyatro sahnelerindeki çok kanallı LED şeritleri (WLED yüklü ESP32) yöneten, **tek dosyalık** (`index.html`), internetsiz çalışan bir ışık kontrol masası.
+Tiyatro sahnesindeki çok kanallı LED şeritleri (WLED 0.15+/16.x yüklü ESP32) yöneten, **tek dosyalık** (`index.html`) kontrol masası.
 
-## Kullanım
+## Kurulum (bir kez)
+1. ESP32’ye WLED kurun (install.wled.me), `4.3.2.1` üzerinden salonun ağına bağlayın. Modemde ESP32’ye **sabit IP** (DHCP rezervasyonu) verin.
+2. `index.html` dosyasını WLED’in dosya yöneticisinden (`http://IP/edit`) **`tiyatro.htm`** adıyla yükleyin.
+3. `http://IP/tiyatro.htm` adresini açın → **Kontrol** sekmesi → “Tümünü Düzelt” + “Akış testi” + “Fail-safe testi”.
 
-| Yöntem | Nasıl |
-|---|---|
-| **Yerel dosya** | `index.html` dosyasını PC/telefon/tablette çift tıklayarak açın (`file://`). Hiçbir harici kaynak gerekmez. |
-| **GitHub Pages (PWA)** | Depoyu Pages ile yayınlayın, bir kez internetliyken açın; Service Worker sayesinde sonra internetsiz de aynı adresten açılır, “Ana ekrana ekle” ile uygulama gibi kurulur. |
-| **ESP32 üzerinden** | Ayarlar → “Uygulamayı ESP32’ye yükle”; sonra `http://4.3.2.1/tiyatro.htm`. Aynı kaynaktan çalıştığı için CORS/HTTPS kısıtı yoktur. |
-
-> GitHub Pages **https** olduğundan bazı tarayıcılar yerel `http://` cihaza erişimi (Mixed Content) engeller. Bu durumda dosya olarak açın veya uygulamayı ESP32’ye yükleyin (Ayarlar ekranında ayrıntılı çözümler var).
+## Nasıl çalışır
+- **Sadece kartlar:** Işığı yalnızca bir karta dokunmak açar. Otomatik ileri geçiş yoktur; bir kartın içinde zamanlı adımlar (ör. gök gürültüsü → şimşek → yağmur) olabilir, son adımda kalır.
+- **Fail-safe:** Tüm sahneler tarayıcıda hesaplanıp DDP-over-WebSocket ile akıtılır. Bağlantı ya da bilgisayar giderse ışıklar ayarlanan süre (varsayılan 5 sn) son görüntüde kalır, sonra WLED kendiliğinden söndürür. Kısa kopmalar sahneyi etkilemez. Söndükten sonra uygulama asla kendiliğinden yakmaz.
+- **Açılış:** ESP32 elektrik gidip gelince hep kapalı başlar (Kontrol sekmesi ayarlar).
+- **Birden fazla ekran:** Her ekrandan kart tetiklenebilir; son dokunan ekran yayın yapar, diğerleri anında durur ve aynı durumu gösterir. Master dimmer ve blackout tüm ekranlarda senkron.
+- **Veriler ESP32’de:** Oyunlar, kartlar, şeritler, efektler ESP32’de A/B yuvalı dosyalarda (`/tiyatro-a.json`, `/tiyatro-b.json`) saklanır; IP değişse veya başka cihazdan açılsa da aynı veriler gelir.
+- **Düzenleme modu:** Aynı anda tek ekran düzenler (kilit). Değişiklikler 3 sn içinde otomatik taslağa (`/tiyatro-draft.json`) yazılır; “Kaydet” ile kalıcı olur. Çakışan kayıtlar tespit edilir. Canlı oyun sırasında ESP32’ye dosya yazılmaz.
+- **Eski yedekler:** v1 JSON dosyaları içe aktarılabilir (alt adımlar otomatik dönüştürülür).
 
 ## Dosyalar
-- `index.html` — uygulamanın tamamı (HTML + CSS + JS, satır içi SVG ikonlar, sistem fontları).
-- `sw.js`, `manifest.webmanifest`, `icon.svg` — yalnızca GitHub Pages/PWA çevrimdışı önbelleği için (tarayıcılar Service Worker’ı satır içi kabul etmez). `file://` kullanımında gerekmez.
-
-## Özellikler (özet)
-- **Bağlantı:** AP modu (4.3.2.1) / Ortak ağ (IP veya `wled.local`) tek tuşla; WebSocket → HTTP JSON → no-cors HTTP API → köprü penceresi yedek zinciri; canlı durum göstergesi; Demo/simülasyon modu.
-- **Şeritler:** 10’a kadar farklı GPIO/LED sayısı, isim, ters yön, LED tipi/renk sırası; segment başlangıç/bitişleri otomatik hesaplanıp tek tuşla WLED’e gönderilir; donanım (pin) yazma; **açılışta Blackout** (boot preset + `def.on=false`); cihazdan okuma; şerit tanımlama (yakıp söndürme).
-- **Oyunlar (projeler):** her oyunun kendi şeritleri ve sahne akışı; tek dokunuşla geçiş, kopyalama, dışa aktarma.
-- **Sahne kartları:** isim, reji notu, 0–30 sn geçiş, alt adımlar (aynı karta her basışta sıradaki adım), otomatik geçiş zamanlayıcısı, kopyalama, sürükle-bırak sıralama, şerit başına WLED efekti / tiyatro efekti / özel efekt; tüm şeritler tek JSON mesajıyla senkron gönderilir.
-- **Efektler:** WLED’in 100+ efekti ve paletleri (bağlanınca cihazdan güncellenir) + canlı LED önizleme; dahili tiyatro efektleri (Amber tungsten geçişi, renkli sweep/crossfade, şimşek/fırtına, ateş, deniz, vals, tango, hip-hop, disko); blok/zaman çizelgeli **özel efekt oluşturucu**; WLED `presets.json`, WLED paletleri, xLights `.xpalette`, LedFX gradyanları, GIMP `.gpl` içe aktarma.
-- **Canlı:** sabit BLACKOUT / SONRAKİ / Master Dimmer, düzenleme kilidi, Wake Lock, kırmızı gece modu, klavye ve sunum kumandası (Boşluk/PgDn/PgUp/B/↑↓/1–9) desteği.
-- **Veri:** her değişiklik otomatik olarak LocalStorage + IndexedDB’ye kaydedilir; tüm arşiv / tek oyun / efektler JSON olarak dışa-içe aktarılır.
-
-Özel ve tiyatro efektleri tarayıcıda hesaplanır ve WebSocket üzerinden (JSON `i` piksel dizisi ya da deneysel DDP-over-WebSocket) akıtılır; tarayıcılar UDP gönderemez.
+- `index.html` — uygulamanın tamamı.
+- `sw.js`, `manifest.webmanifest`, `icon.svg` — yalnızca GitHub Pages’ten demo/önizleme için (çevrimdışı önbellek).
